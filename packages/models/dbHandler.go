@@ -28,8 +28,8 @@ func AddFilm(movie Film) (Film, error) {
 
 	//Insert record into DB
 	filmInsert, err := db.Query(
-		"INSERT INTO films (id, title, actors, director, genre, year, rating, review) VALUES (?,?,?,?,?,?,?,?)",
-		movie.ID, movie.Title, movie.Actors, movie.Director, movie.Genre, movie.Year, movie.Rating, movie.Review)
+		"INSERT INTO films (title, actors, director, genre, year, rating, review) VALUES (?,?,?,?,?,?,?)",
+		movie.Title, movie.Actors, movie.Director, movie.Genre, movie.Year, movie.Rating, movie.Review)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -126,7 +126,7 @@ func GetFilm(title string) (Film, error) {
 	defer db.Close()
 
 	var film Film
-	row := db.QueryRow("SELECT * FROM films WHERE title = ?", title)
+	row := db.QueryRow("SELECT id, title, director, genre, year, rating FROM films WHERE title = ?", title)
 
 	if err := row.Scan(&film.ID, &film.Title, &film.Director, &film.Genre, &film.Year, &film.Rating); err != nil {
 		log.Fatal(err)
@@ -134,6 +134,7 @@ func GetFilm(title string) (Film, error) {
 	return film, nil
 }
 
+//
 func GetRatings(title string) (Film, error) {
 	sqlConfig := mysql.Config{
 		User:                 os.Getenv("DBUSER"),
@@ -150,9 +151,12 @@ func GetRatings(title string) (Film, error) {
 	defer db.Close()
 
 	var film Film
-	row := db.QueryRow("SELECT id, title, rating FROM films WHERE title = ?", title)
+	row, err := db.Query("SELECT id, title, director, rating FROM films WHERE title = ?", title)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	if err := row.Scan(&film.ID, &film.Title, &film.Rating); err != nil {
+	if err := row.Scan(&film.ID, &film.Title, &film.Director, &film.Rating); err != nil {
 		log.Fatal(err)
 	}
 	return film, nil
@@ -250,7 +254,8 @@ func FilmsByActor(actor string) ([]Film, error) {
 	return films, nil
 }
 
-func FilmsByYear(year int64) ([]Film, error) {
+//List all films for a chosen year
+func FilmsByYear(year int) ([]Film, error) {
 	sqlConfig := mysql.Config{
 		User:                 os.Getenv("DBUSER"),
 		Passwd:               os.Getenv("DBPASS"),
@@ -273,7 +278,7 @@ func FilmsByYear(year int64) ([]Film, error) {
 
 	for rows.Next() {
 		var film Film
-		if err := rows.Scan(&film.ID, &film.Title, &film.Director, &film.Genre, &film.Year, &film.Rating); err != nil {
+		if err := rows.Scan(&film.ID, &film.Actors, &film.Title, &film.Director, &film.Genre, &film.Year, &film.Rating, &film.Review); err != nil {
 			log.Fatal(err)
 		}
 		films = append(films, film)

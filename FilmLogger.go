@@ -12,8 +12,8 @@ import (
 func main() {
 	router := gin.Default()
 	router.GET("/films", getFilms)
-	router.GET("/films/:id", getFilm)
-	router.GET("/films/:id/:rating", getRatings)
+	router.GET("/films/:title", getFilm)
+	router.GET("/films/ratings/:rating", getRatings)
 	router.GET("/films/genres/:genre", filmsByGenre)
 	router.GET("/films/directors/:director", filmsByDirector)
 	router.GET("/films/actors/:actor", filmsByActor)
@@ -79,7 +79,7 @@ func getFilm(c *gin.Context) {
 
 //Get rating for a particular film
 func getRatings(c *gin.Context) {
-	title := c.Param("title")
+	title := c.Param("rating")
 
 	rating, err := models.GetRatings(title)
 
@@ -130,8 +130,9 @@ func filmsByActor(c *gin.Context) {
 func filmsByYear(c *gin.Context) {
 	year := c.Param("year")
 	yearInt, err := strconv.Atoi(year)
-	films, err := models.FilmsByYear(int64(yearInt))
+	films, err := models.FilmsByYear(yearInt)
 	if err != nil {
+		fmt.Println(err)
 		fmt.Printf("No films found for the year %d", year)
 		c.AbortWithStatus(http.StatusNotFound)
 	} else {
