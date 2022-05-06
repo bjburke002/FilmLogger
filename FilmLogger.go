@@ -3,6 +3,7 @@ package main
 import (
 	"FilmLogger/packages/models"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -79,15 +80,18 @@ func getFilm(c *gin.Context) {
 
 //Get rating for a particular film
 func getRatings(c *gin.Context) {
-	title := c.Param("rating")
-
-	rating, err := models.GetRatings(title)
+	strRating := c.Param("rating")
+	intRating, err := strconv.Atoi(strRating)
+	if err != nil {
+		log.Fatal(err)
+	}
+	films, err := models.GetRatings(intRating)
 
 	if err != nil {
-		fmt.Printf("Film not found: %s", title)
+		fmt.Printf("No films found with %d star rating", intRating)
 		c.AbortWithStatus(http.StatusNotFound)
 	} else {
-		c.IndentedJSON(http.StatusOK, rating)
+		c.IndentedJSON(http.StatusOK, films)
 	}
 
 }

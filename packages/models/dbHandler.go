@@ -135,7 +135,7 @@ func GetFilm(title string) (Film, error) {
 }
 
 //
-func GetRatings(title string) (Film, error) {
+func GetRatings(rating int) ([]Film, error) {
 	sqlConfig := mysql.Config{
 		User:                 os.Getenv("DBUSER"),
 		Passwd:               os.Getenv("DBPASS"),
@@ -150,16 +150,20 @@ func GetRatings(title string) (Film, error) {
 	}
 	defer db.Close()
 
-	var film Film
-	row, err := db.Query("SELECT id, title, director, rating FROM films WHERE title = ?", title)
+	var films []Film
+	rows, err := db.Query("SELECT id, title, director, rating FROM films WHERE rating = ?", rating)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	if err := row.Scan(&film.ID, &film.Title, &film.Director, &film.Rating); err != nil {
-		log.Fatal(err)
+	for rows.Next() {
+		var film Film
+		if err := rows.Scan(&film.ID, &film.Title, &film.Director, &film.Rating); err != nil {
+			log.Fatal(err)
+		}
+		films = append(films, film)
 	}
-	return film, nil
+
+	return films, nil
 }
 
 func FilmsByGenre(genre string) ([]Film, error) {
