@@ -22,3 +22,7 @@ type Actor struct {
 	Name        string   `json:"fullName"`
 	Filmography []string `json:"filmography"`
 }
+
+type errorString struct {
+	err string
+}

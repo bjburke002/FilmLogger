@@ -35,7 +35,7 @@ func AddFilm(movie Film) (Film, error) {
 	}
 	defer filmInsert.Close()
 
-	//Verify that the film ahs been added to the database
+	//Verify that the film has been added to the database and return to the user
 	var film Film
 	row := db.QueryRow("SELECT * FROM films WHERE title = ?", movie.Title)
 	if err := row.Scan(&film.ID, &film.Title, &film.Actors, &film.Director, &film.Genre, &film.Year, &film.Rating, &film.Review); err != nil {
@@ -134,7 +134,7 @@ func GetFilm(title string) (Film, error) {
 	return film, nil
 }
 
-//
+//Returns all films with a queried rating
 func GetRatings(rating int) ([]Film, error) {
 	sqlConfig := mysql.Config{
 		User:                 os.Getenv("DBUSER"),
@@ -285,7 +285,9 @@ func FilmsByYear(year int) ([]Film, error) {
 		if err := rows.Scan(&film.ID, &film.Actors, &film.Title, &film.Director, &film.Genre, &film.Year, &film.Rating, &film.Review); err != nil {
 			log.Fatal(err)
 		}
-		films = append(films, film)
+		if film.Year != 0 {
+			films = append(films, film)
+		}
 	}
 	return films, nil
 }

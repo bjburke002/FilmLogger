@@ -10,6 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var NotFoundError = fmt.Errorf("Resource could not be found")
+
 func main() {
 	router := gin.Default()
 	router.GET("/films", getFilms)
@@ -19,9 +21,13 @@ func main() {
 	router.GET("/films/directors/:director", filmsByDirector)
 	router.GET("/films/actors/:actor", filmsByActor)
 	router.GET("/films/years/:year", filmsByYear)
+	//router.GET("/health-check", healthCheck)
 	router.POST("/films", addFilm)
 	router.POST("/films/:id", addRatings)
 	router.Run("localhost:8080")
+
+	//Mapping errors to Status codes
+	router.Use(gin.Logger())
 }
 
 func addFilm(c *gin.Context) {
@@ -60,6 +66,8 @@ func getFilms(c *gin.Context) {
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
+	} else if films == nil {
+		c.String(http.StatusOK, "\n\nNo films found in the database. Add some!\n\n")
 	} else {
 		c.IndentedJSON(http.StatusOK, films)
 	}
@@ -71,8 +79,9 @@ func getFilm(c *gin.Context) {
 
 	movie, err := models.GetFilm(title)
 	if err != nil {
-		fmt.Printf("Film not found: %s", title)
-		c.AbortWithStatus(http.StatusNotFound)
+		c.AbortWithStatus(http.StatusInternalServerError)
+	} else if movie.Title == "" {
+		c.String(http.StatusOK, "\n\nFilm not found.\n\n")
 	} else {
 		c.IndentedJSON(http.StatusOK, movie)
 	}
@@ -88,8 +97,9 @@ func getRatings(c *gin.Context) {
 	films, err := models.GetRatings(intRating)
 
 	if err != nil {
-		fmt.Printf("No films found with %d star rating", intRating)
-		c.AbortWithStatus(http.StatusNotFound)
+		c.AbortWithStatus(http.StatusInternalServerError)
+	} else if films == nil {
+		c.String(http.StatusOK, "\n\nNo films with this rating were found.\n\n")
 	} else {
 		c.IndentedJSON(http.StatusOK, films)
 	}
@@ -100,8 +110,9 @@ func filmsByGenre(c *gin.Context) {
 	genre := c.Param("genre")
 	films, err := models.FilmsByGenre(genre)
 	if err != nil {
-		fmt.Printf("No films found in %s genre.", genre)
-		c.AbortWithStatus(http.StatusNotFound)
+		c.AbortWithStatus(http.StatusInternalServerError)
+	} else if films == nil {
+		c.String(http.StatusOK, "\n\nNo films found in this genre.\n\n")
 	} else {
 		for _, film := range films {
 			c.IndentedJSON(http.StatusOK, film)
@@ -113,8 +124,9 @@ func filmsByDirector(c *gin.Context) {
 	director := c.Param("director")
 	films, err := models.FilmsByDirector(director)
 	if err != nil {
-		fmt.Printf("No films found for: %s", director)
-		c.AbortWithStatus(http.StatusNotFound)
+		c.AbortWithStatus(http.StatusInternalServerError)
+	} else if films == nil {
+		c.String(http.StatusOK, "\n\n No films found for this director.\n\n")
 	} else {
 		c.IndentedJSON(http.StatusOK, films)
 	}
@@ -124,8 +136,9 @@ func filmsByActor(c *gin.Context) {
 	actor := c.Param("actor")
 	films, err := models.FilmsByActor(actor)
 	if err != nil {
-		fmt.Printf("No films found for: %s", actor)
-		c.AbortWithStatus(http.StatusNotFound)
+		c.AbortWithStatus(http.StatusInternalServerError)
+	} else if films == nil {
+		c.String(http.StatusOK, "\n\nNo films found for this actorn\n\n.")
 	} else {
 		c.IndentedJSON(http.StatusOK, films)
 	}
@@ -136,10 +149,26 @@ func filmsByYear(c *gin.Context) {
 	yearInt, err := strconv.Atoi(year)
 	films, err := models.FilmsByYear(yearInt)
 	if err != nil {
-		fmt.Println(err)
-		fmt.Printf("No films found for the year %d", year)
-		c.AbortWithStatus(http.StatusNotFound)
+		c.AbortWithStatus(http.StatusInternalServerError)
+	} else if films == nil {
+		c.String(http.StatusOK, "\n\nNo films found for this year.\n\n")
 	} else {
 		c.IndentedJSON(http.StatusOK, films)
 	}
 }
+
+//Recommend a film based on user input (rating, genre, etc)
+//func recommendMe(c *gin.Context) {
+//	//IMDB/letterboxd API
+//}
+//
+////Built-in health check to wrap into alerting
+//func healthCheck(c *gin.Context) {
+//	healthy, err := models.HealthCheck()
+//	if err != nil {
+//		fmt.Println(err)
+//		c.AbortWithStatus(http.StatusNotFound)
+//	} else {
+//		c.IndentedJSON(http.StatusOK, healthy)
+//	}
+//}
